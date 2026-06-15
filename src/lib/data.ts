@@ -29,6 +29,10 @@ type ReviewCommentRow = Database["public"]["Tables"]["review_comments"]["Row"];
 
 const VISIBLE_STATUS = "visible";
 
+function queryTable(client: DbClient, table: keyof Database["public"]["Tables"]) {
+  return (client as any).from(table as string);
+}
+
 async function getSupabaseClient(): Promise<DbClient | null> {
   if (!isSupabaseConfigured()) {
     return null;
@@ -191,8 +195,7 @@ async function getProfilesByIds(client: DbClient, userIds: string[]) {
     return new Map<string, UserProfile>();
   }
 
-  const { data, error } = await client
-    .from("profiles")
+  const { data, error } = await queryTable(client, "profiles")
     .select("*")
     .in("id", [...new Set(userIds)]);
 
@@ -200,9 +203,9 @@ async function getProfilesByIds(client: DbClient, userIds: string[]) {
     throw error;
   }
 
-  return new Map<string, UserProfile>(
-    (data ?? []).map((row) => [row.id, mapProfile(row)!])
-  );
+  const rows = (data ?? []) as ProfileRow[];
+
+  return new Map<string, UserProfile>(rows.map((row) => [row.id, mapProfile(row)!]));
 }
 
 function mapReview(row: ReviewRow, profile?: UserProfile | null): Review {
@@ -282,9 +285,8 @@ export async function syncProfileFromAuthUser(user: User): Promise<UserProfile |
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await client
-    .from("profiles")
-    .upsert(payload, { onConflict: "id" })
+  const { data, error } = await queryTable(client, "profiles")
+    .upsert([payload], { onConflict: "id" })
     .select("*")
     .single();
 
@@ -309,8 +311,7 @@ export async function getPlaces(filters?: PlaceFilters): Promise<Place[]> {
     return applyPlaceFilters(places, filters);
   }
 
-  const { data: placeRows, error: placeError } = await client
-    .from("places")
+  const { data: placeRows, error: placeError } = await queryTable(client, "places")
     .select("*")
     .eq("moderation_status", VISIBLE_STATUS)
     .order("created_at", { ascending: false });
@@ -319,19 +320,20 @@ export async function getPlaces(filters?: PlaceFilters): Promise<Place[]> {
     throw placeError;
   }
 
-  const placeIds = (placeRows ?? []).map((place) => place.id);
+  const typedPlaceRows = (placeRows ?? []) as PlaceRow[];
+  const placeIds = typedPlaceRows.map((place) => place.id);
   const reviewRows =
     placeIds.length === 0
       ? []
       : (
-          await client
-            .from("reviews")
+          await queryTable(client, "reviews")
             .select("*")
             .eq("moderation_status", VISIBLE_STATUS)
             .in("place_id", placeIds)
         ).data ?? [];
+  const typedReviewRows = reviewRows as ReviewRow[];
 
-  return applyPlaceFilters((placeRows ?? []).map((place) => mapPlace(place, reviewRows)), filters);
+  return applyPlaceFilters(typedPlaceRows.map((place) => mapPlace(place, typedReviewRows)), filters);
 }
 
 export async function getPlaceById(id: string): Promise<Place | null> {
@@ -349,8 +351,7 @@ export async function getPlaceById(id: string): Promise<Place | null> {
     );
   }
 
-  const { data: placeRow, error: placeError } = await client
-    .from("places")
+  const { data: placeRow, error: placeError } = await queryTable(client, "places")
     .select("*")
     .eq("id", id)
     .eq("moderation_status", VISIBLE_STATUS)
@@ -363,8 +364,7 @@ export async function getPlaceById(id: string): Promise<Place | null> {
     throw placeError;
   }
 
-  const { data: reviewRows, error: reviewError } = await client
-    .from("reviews")
+  const { data: reviewRows, error: reviewError } = await queryTable(client, "reviews")
     .select("*")
     .eq("place_id", id)
     .eq("moderation_status", VISIBLE_STATUS);
@@ -409,8 +409,7 @@ export async function addPlace(
     moderation_status: VISIBLE_STATUS,
   };
 
-  const { data, error } = await client
-    .from("places")
+  const { data, error } = await queryTable(client, "places")
     .insert(payload)
     .select("*")
     .single();
@@ -429,8 +428,7 @@ export async function getReviewsForPlace(placeId: string): Promise<Review[]> {
     return mockReviews.filter((review) => review.place_id === placeId);
   }
 
-  const { data: reviewRows, error } = await client
-    .from("reviews")
+  const { data: reviewRows, error } = await queryTable(client, "reviews")
     .select("*")
     .eq("place_id", placeId)
     .eq("moderation_status", VISIBLE_STATUS)
@@ -440,12 +438,13 @@ export async function getReviewsForPlace(placeId: string): Promise<Review[]> {
     throw error;
   }
 
+  const typedReviewRows = (reviewRows ?? []) as ReviewRow[];
   const profiles = await getProfilesByIds(
     client,
-    (reviewRows ?? []).map((review) => review.user_id)
+    typedReviewRows.map((review) => review.user_id)
   );
 
-  return (reviewRows ?? []).map((review) => mapReview(review, profiles.get(review.user_id) ?? null));
+  return typedReviewRows.map((review) => mapReview(review, profiles.get(review.user_id) ?? null));
 }
 
 export async function addReview(
@@ -462,8 +461,7 @@ export async function addReview(
     };
   }
 
-  const { data, error } = await client
-    .from("reviews")
+  const { data, error } = await queryTable(client, "reviews")
     .insert({
       place_id: review.place_id,
       user_id: review.user_id,
@@ -494,8 +492,7 @@ export async function getMenuItemsForPlace(placeId: string): Promise<MenuItem[]>
     return mockMenuItems.filter((item) => item.place_id === placeId);
   }
 
-  const { data, error } = await client
-    .from("menu_items")
+  const { data, error } = await queryTable(client, "menu_items")
     .select("*")
     .eq("place_id", placeId)
     .order("created_at", { ascending: true });
@@ -504,7 +501,7 @@ export async function getMenuItemsForPlace(placeId: string): Promise<MenuItem[]>
     throw error;
   }
 
-  return (data ?? []).map(mapMenuItem);
+  return ((data ?? []) as MenuItemRow[]).map(mapMenuItem);
 }
 
 export async function getPhotosForPlace(placeId: string): Promise<Photo[]> {
@@ -514,8 +511,7 @@ export async function getPhotosForPlace(placeId: string): Promise<Photo[]> {
     return mockPhotos.filter((photo) => photo.place_id === placeId);
   }
 
-  const { data: photoRows, error } = await client
-    .from("photos")
+  const { data: photoRows, error } = await queryTable(client, "photos")
     .select("*")
     .eq("place_id", placeId)
     .eq("moderation_status", VISIBLE_STATUS)
@@ -525,12 +521,13 @@ export async function getPhotosForPlace(placeId: string): Promise<Photo[]> {
     throw error;
   }
 
+  const typedPhotoRows = (photoRows ?? []) as PhotoRow[];
   const profiles = await getProfilesByIds(
     client,
-    (photoRows ?? []).map((photo) => photo.user_id)
+    typedPhotoRows.map((photo) => photo.user_id)
   );
 
-  return (photoRows ?? []).map((photo) => mapPhoto(photo, profiles.get(photo.user_id) ?? null));
+  return typedPhotoRows.map((photo) => mapPhoto(photo, profiles.get(photo.user_id) ?? null));
 }
 
 export async function addPhoto(
@@ -546,8 +543,7 @@ export async function addPhoto(
     };
   }
 
-  const { data, error } = await client
-    .from("photos")
+  const { data, error } = await queryTable(client, "photos")
     .insert({
       place_id: photo.place_id,
       user_id: photo.user_id,
@@ -585,8 +581,7 @@ export async function getCommentsForReviews(reviewIds: string[]) {
     return {} as Record<string, ReviewComment[]>;
   }
 
-  const { data: commentRows, error } = await client
-    .from("review_comments")
+  const { data: commentRows, error } = await queryTable(client, "review_comments")
     .select("*")
     .eq("moderation_status", VISIBLE_STATUS)
     .in("review_id", reviewIds)
@@ -596,12 +591,13 @@ export async function getCommentsForReviews(reviewIds: string[]) {
     throw error;
   }
 
+  const typedCommentRows = (commentRows ?? []) as ReviewCommentRow[];
   const profiles = await getProfilesByIds(
     client,
-    (commentRows ?? []).map((comment) => comment.user_id)
+    typedCommentRows.map((comment) => comment.user_id)
   );
 
-  return (commentRows ?? []).reduce<Record<string, ReviewComment[]>>((groups, comment) => {
+  return typedCommentRows.reduce<Record<string, ReviewComment[]>>((groups, comment) => {
     const mapped = mapComment(comment, profiles.get(comment.user_id) ?? null);
     groups[comment.review_id] ||= [];
     groups[comment.review_id].push(mapped);
@@ -623,8 +619,7 @@ export async function addReviewComment(
     };
   }
 
-  const { data, error } = await client
-    .from("review_comments")
+  const { data, error } = await queryTable(client, "review_comments")
     .insert({
       review_id: comment.review_id,
       user_id: comment.user_id,
@@ -656,8 +651,7 @@ export async function addReport(
     };
   }
 
-  const { data, error } = await client
-    .from("reports")
+  const { data, error } = await queryTable(client, "reports")
     .insert({
       reporter_id: report.reporter_id,
       entity_type: report.entity_type,
@@ -694,8 +688,7 @@ export async function getProfileById(id: string): Promise<UserProfile | null> {
     };
   }
 
-  const { data, error } = await client
-    .from("profiles")
+  const { data, error } = await queryTable(client, "profiles")
     .select("*")
     .eq("id", id)
     .single();
@@ -724,19 +717,16 @@ export async function getProfileContributions(userId: string) {
 
   const [profile, placeRows, reviewRows, photoRows] = await Promise.all([
     getProfileById(userId),
-    client
-      .from("places")
+    queryTable(client, "places")
       .select("*")
       .eq("submitted_by", userId)
       .order("created_at", { ascending: false }),
-    client
-      .from("reviews")
+    queryTable(client, "reviews")
       .select("*")
       .eq("user_id", userId)
       .eq("moderation_status", VISIBLE_STATUS)
       .order("created_at", { ascending: false }),
-    client
-      .from("photos")
+    queryTable(client, "photos")
       .select("*")
       .eq("user_id", userId)
       .eq("moderation_status", VISIBLE_STATUS)
@@ -762,8 +752,14 @@ export async function getProfileContributions(userId: string) {
 
   return {
     profile,
-    places: (placeRows.data ?? []).map((place) => mapPlace(place, reviewRows.data ?? [])),
-    reviews: (reviewRows.data ?? []).map((review) => mapReview(review, profileMap.get(userId) ?? null)),
-    photos: (photoRows.data ?? []).map((photo) => mapPhoto(photo, profileMap.get(userId) ?? null)),
+    places: ((placeRows.data ?? []) as PlaceRow[]).map((place) =>
+      mapPlace(place, (reviewRows.data ?? []) as ReviewRow[])
+    ),
+    reviews: ((reviewRows.data ?? []) as ReviewRow[]).map((review) =>
+      mapReview(review, profileMap.get(userId) ?? null)
+    ),
+    photos: ((photoRows.data ?? []) as PhotoRow[]).map((photo) =>
+      mapPhoto(photo, profileMap.get(userId) ?? null)
+    ),
   };
 }

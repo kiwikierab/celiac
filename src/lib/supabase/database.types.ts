@@ -197,5 +197,9 @@ export interface Database {
         Update: Partial<Omit<Database["public"]["Tables"]["reports"]["Insert"], "reporter_id" | "entity_type" | "entity_id">>;
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Place } from "@/types";
 import { getSafetyTags } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ interface MapProps {
   center?: [number, number];
   zoom?: number;
   selectedId?: string;
+  userLocation?: [number, number] | null;
 }
 
 export default function PlacesMap({
@@ -19,10 +20,16 @@ export default function PlacesMap({
   center = [-37.82, 144.98],
   zoom = 12,
   selectedId,
+  userLocation,
 }: MapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const leafletMapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markersLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userLayerRef = useRef<any>(null);
+  const [leaflet, setLeaflet] = useState<typeof import("leaflet") | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
@@ -43,40 +50,14 @@ export default function PlacesMap({
 
       const map = L.map(mapRef.current!).setView(center, zoom);
       leafletMapRef.current = map;
+      markersLayerRef.current = L.layerGroup().addTo(map);
+      setLeaflet(L);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution:
           '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
-
-      places.forEach((place) => {
-        const tags = getSafetyTags(place);
-        const safetyRating = place.avg_safety_rating ?? 0;
-        const safetyClass = safetyRating >= 4 ? "🟢" : safetyRating >= 3 ? "🟡" : "🔴";
-
-        const popupContent = `
-          <div style="min-width:180px">
-            <strong style="font-size:14px">${place.name}</strong>
-            <div style="font-size:12px;color:#666;margin:2px 0">${place.city}</div>
-            ${safetyClass} Safety: ${safetyRating > 0 ? safetyRating.toFixed(1) + "/5" : "No data"}
-            <br/>
-            ${tags.length > 0 ? tags.join(" · ") : ""}
-            <br/>
-            <a href="/places/${place.id}" style="color:#15803d;font-size:12px;font-weight:600">
-              View details →
-            </a>
-          </div>
-        `;
-
-        const marker = L.marker([place.lat, place.lng])
-          .bindPopup(popupContent)
-          .addTo(map);
-
-        if (selectedId === place.id) {
-          marker.openPopup();
-        }
-      });
     });
 
     return () => {
@@ -85,8 +66,63 @@ export default function PlacesMap({
         leafletMapRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [center, zoom]);
+
+  useEffect(() => {
+    if (!leaflet || !leafletMapRef.current || !markersLayerRef.current) {
+      return;
+    }
+
+    const map = leafletMapRef.current;
+    const markersLayer = markersLayerRef.current;
+    markersLayer.clearLayers();
+
+    places.forEach((place) => {
+      const tags = getSafetyTags(place);
+      const safetyRating = place.avg_safety_rating ?? 0;
+      const safetyClass = safetyRating >= 4 ? "🟢" : safetyRating >= 3 ? "🟡" : "🔴";
+
+      const popupContent = `
+        <div style="min-width:180px">
+          <strong style="font-size:14px">${place.name}</strong>
+          <div style="font-size:12px;color:#666;margin:2px 0">${place.city}</div>
+          ${safetyClass} Safety: ${safetyRating > 0 ? safetyRating.toFixed(1) + "/5" : "No data"}
+          <br/>
+          ${tags.length > 0 ? tags.join(" · ") : ""}
+          <br/>
+          <a href="/places/${place.id}" style="color:#15803d;font-size:12px;font-weight:600">
+            View details →
+          </a>
+        </div>
+      `;
+
+      const marker = leaflet.marker([place.lat, place.lng]).bindPopup(popupContent);
+      marker.addTo(markersLayer);
+
+      if (selectedId === place.id) {
+        marker.openPopup();
+      }
+    });
+
+    if (userLayerRef.current) {
+      userLayerRef.current.remove();
+      userLayerRef.current = null;
+    }
+
+    if (userLocation) {
+      userLayerRef.current = leaflet.layerGroup([
+        leaflet.marker(userLocation).bindPopup("You are here"),
+        leaflet.circle(userLocation, {
+          radius: 250,
+          color: "#15803d",
+          fillColor: "#86efac",
+          fillOpacity: 0.2,
+        }),
+      ]).addTo(map);
+    }
+
+    map.setView(userLocation ?? center, zoom);
+  }, [leaflet, places, selectedId, userLocation, center, zoom]);
 
   return (
     <div

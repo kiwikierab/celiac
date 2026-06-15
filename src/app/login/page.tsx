@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { syncProfileFromAuthUser } from "@/lib/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -10,14 +10,19 @@ import { useAuthSession } from "@/lib/useAuthSession";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading: sessionLoading } = useAuthSession();
   const [form, setForm] = useState({ email: "", password: "" });
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirectTo, setRedirectTo] = useState("/profile");
 
-  const redirectTo = searchParams.get("next") || "/profile";
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next) {
+      setRedirectTo(next);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

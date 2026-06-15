@@ -6,12 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export function useAuthSession() {
+  const isConfigured = isSupabaseConfigured();
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured());
+  const [loading, setLoading] = useState(isConfigured);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setLoading(false);
+    if (!isConfigured) {
       return;
     }
 
@@ -32,12 +32,12 @@ export function useAuthSession() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isConfigured]);
 
   return {
     session,
     user: session?.user ?? null,
     loading,
-    isConfigured: isSupabaseConfigured(),
+    isConfigured,
   };
 }

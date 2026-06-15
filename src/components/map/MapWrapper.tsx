@@ -18,6 +18,7 @@ interface MapWrapperProps {
   center?: [number, number];
   zoom?: number;
   selectedId?: string;
+  userLocation?: [number, number] | null;
 }
 
 export default function MapWrapper(props: MapWrapperProps) {
