@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthNav from "@/components/ui/AuthNav";
 
 export default function Navbar() {
   return (
@@ -28,12 +29,7 @@ export default function Navbar() {
           >
             + Add Place
           </Link>
-          <Link
-            href="/login"
-            className="text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
-          >
-            Sign In
-          </Link>
+          <AuthNav />
         </div>
       </div>
     </nav>

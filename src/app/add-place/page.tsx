@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { addPlace, syncProfileFromAuthUser } from "@/lib/data";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { useAuthSession } from "@/lib/useAuthSession";
 import type { PlaceCategory } from "@/types";
 
 const CATEGORIES: { value: PlaceCategory; label: string }[] = [
@@ -18,6 +21,8 @@ const defaultForm = {
   address: "",
   city: "",
   country: "Australia",
+  lat: "",
+  lng: "",
   category: "cafe" as PlaceCategory,
   website: "",
   phone: "",
@@ -31,16 +36,51 @@ const defaultForm = {
 
 export default function AddPlacePage() {
   const router = useRouter();
+  const { session, loading: authLoading, isConfigured } = useAuthSession();
   const [form, setForm] = useState(defaultForm);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof typeof defaultForm, string>>>({});
+  const [pending, setPending] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validate = () => {
     const newErrors: typeof errors = {};
     if (!form.name.trim()) newErrors.name = "Name is required";
     if (!form.address.trim()) newErrors.address = "Address is required";
     if (!form.city.trim()) newErrors.city = "City is required";
+    if (!form.lat.trim()) newErrors.lat = "Latitude is required";
+    if (!form.lng.trim()) newErrors.lng = "Longitude is required";
+    if (form.lat && Number.isNaN(Number(form.lat))) newErrors.lat = "Latitude must be a number";
+    if (form.lng && Number.isNaN(Number(form.lng))) newErrors.lng = "Longitude must be a number";
     return newErrors;
+  };
+
+  const captureCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    setGeoLoading(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setForm((current) => ({
+          ...current,
+          lat: coords.latitude.toFixed(6),
+          lng: coords.longitude.toFixed(6),
+        }));
+        setGeoLoading(false);
+      },
+      (error) => {
+        setGeoLoading(false);
+        setGeoError(error.message || "Unable to read your location.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,14 +91,40 @@ export default function AddPlacePage() {
       return;
     }
 
-    // TODO: Connect to Supabase — insert into places table
-    // const supabase = createClient();
-    // const { data } = await supabase.from("places").insert({ ...form, submitted_by: session.user.id }).select().single();
-    // router.push(`/places/${data.id}`);
+    setPending(true);
+    setSubmitError(null);
 
-    // Mock: just show success
-    setSubmitted(true);
-    setTimeout(() => router.push("/places"), 1500);
+    try {
+      if (isConfigured && session?.user) {
+        await syncProfileFromAuthUser(session.user);
+      }
+
+      const created = await addPlace({
+        name: form.name.trim(),
+        address: form.address.trim(),
+        city: form.city.trim(),
+        country: form.country.trim(),
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        category: form.category,
+        website: form.website.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        description: form.description.trim() || undefined,
+        submitted_by: session?.user.id,
+        gluten_free_menu: form.gluten_free_menu,
+        dedicated_fryer: form.dedicated_fryer,
+        dedicated_kitchen: form.dedicated_kitchen,
+        staff_trained: form.staff_trained,
+        cross_contact_notes: form.cross_contact_notes.trim() || undefined,
+      });
+
+      setSubmitted(true);
+      setTimeout(() => router.push(`/places/${created.id}`), 1200);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to submit this place.");
+    } finally {
+      setPending(false);
+    }
   };
 
   if (submitted) {
@@ -77,6 +143,9 @@ export default function AddPlacePage() {
       setForm({ ...form, [key]: e.target.value }),
   });
 
+  const requiresAuth = isSupabaseConfigured();
+  const isAuthenticated = Boolean(session?.user);
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
       <nav className="text-sm text-stone-500 flex gap-1">
@@ -92,11 +161,26 @@ export default function AddPlacePage() {
         </p>
       </div>
 
-      {/* Auth notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-        <strong>Note:</strong> You are submitting as a guest (auth coming soon).{" "}
-        <Link href="/login" className="underline">Sign in</Link> to track your contributions.
-      </div>
+      {requiresAuth ? (
+        authLoading ? (
+          <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+            Checking your session…
+          </div>
+        ) : isAuthenticated ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
+            Signed in as <strong>{session?.user.email}</strong>. Your contribution will appear on your profile.
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <strong>Sign in required.</strong> Please{" "}
+            <Link href="/login?next=/add-place" className="underline">sign in</Link> to add a place.
+          </div>
+        )
+      ) : (
+        <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+          Demo mode: place submissions are not persisted until Supabase is configured.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Basic info */}
@@ -142,6 +226,27 @@ export default function AddPlacePage() {
             <FormField label="Country">
               <input type="text" {...field("country")} className={inputCls()} />
             </FormField>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField label="Latitude *" error={errors.lat}>
+              <input type="text" placeholder="-37.8136" {...field("lat")} className={inputCls(!!errors.lat)} />
+            </FormField>
+            <FormField label="Longitude *" error={errors.lng}>
+              <input type="text" placeholder="144.9631" {...field("lng")} className={inputCls(!!errors.lng)} />
+            </FormField>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={captureCurrentLocation}
+              disabled={geoLoading}
+              className="border border-stone-300 rounded-xl px-4 py-2 hover:border-green-400 hover:text-green-700 transition-colors"
+            >
+              {geoLoading ? "Locating…" : "Use current location"}
+            </button>
+            {geoError && <span className="text-red-600">{geoError}</span>}
           </div>
 
           <FormField label="Website">
@@ -196,11 +301,18 @@ export default function AddPlacePage() {
           </FormField>
         </fieldset>
 
+        {submitError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {submitError}
+          </div>
+        )}
+
         <button
           type="submit"
+          disabled={pending || (requiresAuth && !isAuthenticated)}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          Submit Place
+          {pending ? "Submitting…" : "Submit Place"}
         </button>
       </form>
     </div>
