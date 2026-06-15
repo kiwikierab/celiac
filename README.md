@@ -70,6 +70,8 @@ The app runs fine with an empty `.env.local` (mock data mode). Add Supabase cred
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional | Your Supabase anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional | Server-side admin tasks only |
 | `NEXT_PUBLIC_SUPABASE_PHOTOS_BUCKET` | Optional | Storage bucket for place photos (defaults to `place-photos`) |
+| `NEXT_PUBLIC_APP_URL` | Optional | App base URL (defaults to `http://localhost:3000`) |
+| `NEXT_PUBLIC_OSM_ADDRESS_SEARCH_URL` | Optional | Nominatim-compatible `/search` endpoint used for add-place address autocomplete |
 
 ---
 
