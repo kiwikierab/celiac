@@ -13,7 +13,12 @@ Built with Next.js, Tailwind CSS, Leaflet/OpenStreetMap, and designed to connect
 - 🔍 **Place Detail** — see safety info, reviews, menu items, and photos
 - ➕ **Add a Place** — contribute new venues to the community
 - ⭐ **Reviews** — safety rating, taste rating, staff knowledge, cross-contact notes
-- 🔒 **Auth placeholders** — sign in / sign up UI (Supabase ready)
+- 🔒 **Supabase auth** — sign in, sign up, and protected contribution flows
+- 📷 **Photo uploads** — upload venue photos to Supabase Storage
+- 📍 **Near me search** — geolocation-aware list and map browsing
+- 💬 **Review comments** — discuss recent reviews
+- 🙋 **Profiles** — public contribution pages and personal profile dashboard
+- 🚨 **Reporting** — flag places, reviews, comments, and photos
 
 ### Celiac Safety Signals
 
@@ -43,7 +48,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — the app works immediately with mock data, no external services needed.
+Open [http://localhost:3000](http://localhost:3000).
+
+Without Supabase credentials the app stays in demo mode with mock data. Once configured, it uses real auth, database, and storage features.
 
 ---
 
@@ -62,6 +69,7 @@ The app runs fine with an empty `.env.local` (mock data mode). Add Supabase cred
 | `NEXT_PUBLIC_SUPABASE_URL` | Optional | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional | Your Supabase anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional | Server-side admin tasks only |
+| `NEXT_PUBLIC_SUPABASE_PHOTOS_BUCKET` | Optional | Storage bucket for place photos (defaults to `place-photos`) |
 
 ---
 
@@ -102,50 +110,13 @@ src/
 1. Create a free project at [supabase.com](https://supabase.com)
 2. Add credentials to `.env.local`
 3. Install the Supabase client: `npm install @supabase/supabase-js @supabase/ssr`
-4. Uncomment the code in `src/lib/supabase/client.ts` and `server.ts`
-5. Replace mock functions in `src/lib/data.ts` with Supabase queries
-6. Create database tables matching the types in `src/types/index.ts`
+4. Run the SQL in `supabase/schema.sql`
+5. Start the app and create an account
+6. Add places, upload photos, comment on reviews, and browse with geolocation
 
-### Suggested SQL Schema
+### Supabase schema
 
-```sql
--- Places
-create table places (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  address text,
-  city text,
-  country text,
-  lat float8,
-  lng float8,
-  category text,
-  website text,
-  phone text,
-  description text,
-  submitted_by uuid references auth.users,
-  gluten_free_menu boolean default false,
-  dedicated_fryer boolean default false,
-  dedicated_kitchen boolean default false,
-  staff_trained boolean default false,
-  cross_contact_notes text,
-  created_at timestamptz default now()
-);
-
--- Reviews
-create table reviews (
-  id uuid primary key default gen_random_uuid(),
-  place_id uuid references places not null,
-  user_id uuid references auth.users not null,
-  overall_rating int check (overall_rating between 1 and 5),
-  safety_rating int check (safety_rating between 1 and 5),
-  taste_rating int check (taste_rating between 1 and 5),
-  notes text,
-  staff_knowledgeable boolean,
-  cross_contact_mentioned boolean,
-  would_return boolean,
-  created_at timestamptz default now()
-);
-```
+The full schema, RLS policies, moderation/report tables, and Storage bucket rules live in `supabase/schema.sql`.
 
 ---
 
@@ -163,16 +134,9 @@ create table reviews (
 
 ## 🚧 Remaining Follow-up Work
 
-- [ ] Connect Supabase auth (sign in, sign up, session)
-- [ ] Connect Supabase database for places and reviews
-- [ ] Photo upload with Supabase Storage
-- [ ] Geolocation "near me" search
-- [ ] Comments on reviews
-- [ ] User profile page
-- [ ] Moderation / report inaccurate info
+- [ ] Moderator/admin dashboard for triaging reports
 - [ ] PWA / offline support
 - [ ] Opening hours
-- [ ] Admin dashboard
 
 ---
 

@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { safetyBgColor, getSafetyTags, starsString, categoryLabels } from "@/lib/utils";
+import {
+  safetyBgColor,
+  getSafetyTags,
+  starsString,
+  categoryLabels,
+  formatDistanceKm,
+} from "@/lib/utils";
 import type { Place } from "@/types";
 
 interface PlaceCardProps {
@@ -62,6 +68,9 @@ export default function PlaceCard({ place }: PlaceCardProps) {
             <span>{place.review_count} review{place.review_count !== 1 ? "s" : ""}</span>
           )}
         </div>
+        {place.distance_km != null && (
+          <p className="text-xs text-green-700 font-medium">{formatDistanceKm(place.distance_km)}</p>
+        )}
       </div>
     </Link>
   );

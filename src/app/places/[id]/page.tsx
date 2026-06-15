@@ -5,10 +5,13 @@ import {
   getReviewsForPlace,
   getMenuItemsForPlace,
   getPhotosForPlace,
+  getCommentsForReviews,
 } from "@/lib/data";
 import SafetyBadge from "@/components/place/SafetyBadge";
 import ReviewCard from "@/components/review/ReviewCard";
 import MapWrapper from "@/components/map/MapWrapper";
+import PhotoGallery from "@/components/place/PhotoGallery";
+import ReportButton from "@/components/ui/ReportButton";
 import { starsString, formatDate, categoryLabels } from "@/lib/utils";
 
 interface PageProps {
@@ -25,6 +28,8 @@ export default async function PlaceDetailPage({ params }: PageProps) {
   ]);
 
   if (!place) notFound();
+
+  const commentsByReview = await getCommentsForReviews(reviews.map((review) => review.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
@@ -54,6 +59,7 @@ export default async function PlaceDetailPage({ params }: PageProps) {
             + Write Review
           </Link>
         </div>
+        <ReportButton entityId={place.id} entityType="place" />
 
         {/* Ratings summary */}
         {place.avg_overall_rating != null && (
@@ -116,24 +122,7 @@ export default async function PlaceDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Photos */}
-      {photos.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-stone-800 mb-3">Photos</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {photos.map((photo) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={photo.id}
-                src={photo.url}
-                alt={photo.alt ?? place.name}
-                className="rounded-xl object-cover aspect-video w-full"
-              />
-            ))}
-          </div>
-          {/* TODO: Add photo upload button when auth + Supabase storage is connected */}
-        </section>
-      )}
+      <PhotoGallery placeId={place.id} placeName={place.name} photos={photos} />
 
       {/* Mini map */}
       <section>
@@ -216,7 +205,11 @@ export default async function PlaceDetailPage({ params }: PageProps) {
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewCard
+                key={review.id}
+                review={review}
+                comments={commentsByReview[review.id] ?? []}
+              />
             ))}
           </div>
         )}

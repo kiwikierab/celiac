@@ -2,21 +2,58 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { syncProfileFromAuthUser } from "@/lib/data";
 
 export default function SignUpPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to Supabase Auth
-    // const supabase = createClient();
-    // const { error } = await supabase.auth.signUp({
-    //   email: form.email,
-    //   password: form.password,
-    //   options: { data: { name: form.name } }
-    // });
-    setSubmitted(true);
+
+    if (!isSupabaseConfigured()) {
+      setSubmitted(true);
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            name: form.name,
+          },
+        },
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (data.session && data.user) {
+        await syncProfileFromAuthUser(data.user);
+        setMessage("Account created. You can now start contributing.");
+      } else {
+        setMessage("Account created. Check your email to confirm your address before signing in.");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to create your account.");
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -32,9 +69,11 @@ export default function SignUpPage() {
 
         {submitted ? (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center text-green-800 text-sm">
-            <strong>Auth is coming soon!</strong> Supabase integration is not yet configured.
+            <strong>{message ?? "Demo mode only."}</strong> {!isSupabaseConfigured() && " Supabase integration is not yet configured."}
             <br />
-            <Link href="/" className="underline mt-2 inline-block">Back to home</Link>
+            <Link href={isSupabaseConfigured() ? "/login" : "/"} className="underline mt-2 inline-block">
+              {isSupabaseConfigured() ? "Continue to sign in" : "Back to home"}
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,11 +120,18 @@ export default function SignUpPage() {
               />
             </div>
 
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
+              disabled={pending}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
             >
-              Create Account
+              {pending ? "Creating account…" : "Create Account"}
             </button>
           </form>
         )}
@@ -98,7 +144,11 @@ export default function SignUpPage() {
         </p>
 
         <div className="text-center text-xs text-stone-400 bg-stone-100 rounded-xl p-3">
-          🔒 Auth requires Supabase configuration. See <code>src/lib/supabase/</code> for setup.
+          {isSupabaseConfigured() ? (
+            <>🔒 New accounts are stored in Supabase Auth.</>
+          ) : (
+            <>🔒 Auth requires Supabase configuration. See <code>src/lib/supabase/</code> for setup.</>
+          )}
         </div>
       </div>
     </div>

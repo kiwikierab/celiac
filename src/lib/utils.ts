@@ -70,6 +70,31 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** Calculate distance between two coordinates in kilometers. */
+export function calculateDistanceKm(
+  from: [number, number],
+  to: [number, number]
+): number {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to[0] - from[0]);
+  const dLng = toRadians(to[1] - from[1]);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(from[0])) *
+      Math.cos(toRadians(to[0])) *
+      Math.sin(dLng / 2) ** 2;
+
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Format a distance value for UI display. */
+export function formatDistanceKm(distanceKm: number): string {
+  return distanceKm < 1
+    ? `${Math.round(distanceKm * 1000)} m away`
+    : `${distanceKm.toFixed(1)} km away`;
+}
+
 /** Category display labels. */
 export const categoryLabels: Record<string, string> = {
   cafe: "Café",

@@ -3,10 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { addReview, syncProfileFromAuthUser } from "@/lib/data";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { useAuthSession } from "@/lib/useAuthSession";
 
 export default function WriteReviewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { session, loading: authLoading, isConfigured } = useAuthSession();
 
   const [form, setForm] = useState({
     overall_rating: 4,
@@ -18,14 +22,33 @@ export default function WriteReviewPage() {
     would_return: true,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Connect to Supabase — insert into reviews table with user_id from auth session
-    // const supabase = createClient();
-    // await supabase.from("reviews").insert({ ...form, place_id: id, user_id: session.user.id });
-    setSubmitted(true);
-    setTimeout(() => router.push(`/places/${id}`), 1500);
+
+    setPending(true);
+    setSubmitError(null);
+
+    try {
+      if (isConfigured && session?.user) {
+        await syncProfileFromAuthUser(session.user);
+      }
+
+      await addReview({
+        ...form,
+        place_id: id,
+        user_id: session?.user.id ?? "demo-user",
+      });
+
+      setSubmitted(true);
+      setTimeout(() => router.push(`/places/${id}`), 1500);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to submit this review.");
+    } finally {
+      setPending(false);
+    }
   };
 
   if (submitted) {
@@ -55,11 +78,26 @@ export default function WriteReviewPage() {
         </p>
       </div>
 
-      {/* Auth notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-        <strong>Note:</strong> You are posting as a guest (auth coming soon).{" "}
-        <Link href="/login" className="underline">Sign in</Link> to link reviews to your account.
-      </div>
+      {isSupabaseConfigured() ? (
+        authLoading ? (
+          <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+            Checking your session…
+          </div>
+        ) : session?.user ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
+            Posting as <strong>{session.user.email}</strong>.
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <strong>Sign in required.</strong> Please{" "}
+            <Link href={`/login?next=/places/${id}/review`} className="underline">sign in</Link> to post a review.
+          </div>
+        )
+      ) : (
+        <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+          Demo mode: reviews are not persisted until Supabase is configured.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Ratings */}
@@ -122,11 +160,18 @@ export default function WriteReviewPage() {
           />
         </div>
 
+        {submitError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {submitError}
+          </div>
+        )}
+
         <button
           type="submit"
+          disabled={pending || (isSupabaseConfigured() && !session?.user)}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          Submit Review
+          {pending ? "Submitting…" : "Submit Review"}
         </button>
       </form>
     </div>
