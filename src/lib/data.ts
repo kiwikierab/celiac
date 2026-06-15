@@ -30,6 +30,7 @@ type ReviewCommentRow = Database["public"]["Tables"]["review_comments"]["Row"];
 const VISIBLE_STATUS = "visible";
 
 function queryTable(client: DbClient, table: keyof Database["public"]["Tables"]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (client as any).from(table as string);
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -15,14 +15,10 @@ export default function LoginPage() {
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redirectTo, setRedirectTo] = useState("/profile");
-
-  useEffect(() => {
-    const next = new URLSearchParams(window.location.search).get("next");
-    if (next) {
-      setRedirectTo(next);
-    }
-  }, []);
+  const redirectTo =
+    typeof window === "undefined"
+      ? "/profile"
+      : new URLSearchParams(window.location.search).get("next") || "/profile";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
