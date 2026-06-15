@@ -73,18 +73,8 @@ export default function AddPlacePage() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
   useEffect(() => {
-    if (!OSM_ADDRESS_SEARCH_URL) {
-      setAddressSuggestions([]);
-      setAddressSearchLoading(false);
-      setAddressSearchError(null);
-      return;
-    }
-
     const address = form.address.trim();
-    if (address.length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
-      setAddressSuggestions([]);
-      setAddressSearchLoading(false);
-      setAddressSearchError(null);
+    if (!OSM_ADDRESS_SEARCH_URL || address.length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
       return;
     }
 
@@ -340,7 +330,13 @@ export default function AddPlacePage() {
                   const address = e.target.value;
                   setForm((current) => ({ ...current, address }));
                   setErrors((current) => ({ ...current, address: undefined }));
-                  setAddressSearchError(null);
+                  if (address.trim().length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
+                    setAddressSuggestions([]);
+                    setAddressSearchLoading(false);
+                    setAddressSearchError(null);
+                  } else {
+                    setAddressSearchError(null);
+                  }
                   setShowAddressSuggestions(true);
                 }}
                 autoComplete="street-address"
