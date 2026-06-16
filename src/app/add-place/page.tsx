@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addPlace, syncProfileFromAuthUser } from "@/lib/data";
@@ -19,8 +19,9 @@ const CATEGORIES: { value: PlaceCategory; label: string }[] = [
 const defaultForm = {
   name: "",
   address: "",
+  suburb: "",
   city: "",
-  country: "Australia",
+  postcode: "",
   lat: "",
   lng: "",
   category: "cafe" as PlaceCategory,
@@ -34,27 +35,19 @@ const defaultForm = {
   cross_contact_notes: "",
 };
 
-const OSM_ADDRESS_SEARCH_URL = process.env.NEXT_PUBLIC_OSM_ADDRESS_SEARCH_URL?.trim();
-const AUTOCOMPLETE_MIN_QUERY_LENGTH = 3;
+const NZ_COUNTRY_NAME = "New Zealand";
+const NZ_MIN_LAT = -53;
+const NZ_MAX_LAT = -34;
+const NZ_MIN_LNG = 166;
+const NZ_MAX_LNG = 179;
 
-interface AddressSuggestion {
-  lat: string;
-  lon: string;
-  display_name: string;
-  address?: {
-    house_number?: string;
-    road?: string;
-    pedestrian?: string;
-    footway?: string;
-    path?: string;
-    suburb?: string;
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    county?: string;
-    country?: string;
-  };
+interface GeocodeResult {
+  address: string;
+  city: string;
+  suburb?: string;
+  postcode?: string;
+  lat: number;
+  lng: number;
 }
 
 export default function AddPlacePage() {
@@ -67,65 +60,8 @@ export default function AddPlacePage() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
-  const [addressSearchLoading, setAddressSearchLoading] = useState(false);
-  const [addressSearchError, setAddressSearchError] = useState<string | null>(null);
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-
-  useEffect(() => {
-    const address = form.address.trim();
-    if (!OSM_ADDRESS_SEARCH_URL || address.length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(async () => {
-      setAddressSearchLoading(true);
-      setAddressSearchError(null);
-
-      try {
-        const url = new URL(OSM_ADDRESS_SEARCH_URL, window.location.origin);
-        const query = [address, form.city.trim(), form.country.trim()]
-          .filter(Boolean)
-          .join(", ");
-
-        url.searchParams.set("q", query);
-        url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("addressdetails", "1");
-        url.searchParams.set("limit", "5");
-
-        const response = await fetch(url.toString(), {
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load address suggestions.");
-        }
-
-        const data = (await response.json()) as AddressSuggestion[];
-        setAddressSuggestions(Array.isArray(data) ? data : []);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-
-        setAddressSuggestions([]);
-        setAddressSearchError(
-          error instanceof Error ? error.message : "Unable to load address suggestions."
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setAddressSearchLoading(false);
-        }
-      }
-    }, 300);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeoutId);
-    };
-  }, [form.address, form.city, form.country]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -136,6 +72,16 @@ export default function AddPlacePage() {
     if (!form.lng.trim()) newErrors.lng = "Longitude is required";
     if (form.lat && Number.isNaN(Number(form.lat))) newErrors.lat = "Latitude must be a number";
     if (form.lng && Number.isNaN(Number(form.lng))) newErrors.lng = "Longitude must be a number";
+    if (
+      form.lat &&
+      form.lng &&
+      !Number.isNaN(Number(form.lat)) &&
+      !Number.isNaN(Number(form.lng)) &&
+      !isWithinNewZealandBounds(Number(form.lat), Number(form.lng))
+    ) {
+      newErrors.lat = "Coordinates must be within New Zealand.";
+      newErrors.lng = "Coordinates must be within New Zealand.";
+    }
     return newErrors;
   };
 
@@ -150,6 +96,12 @@ export default function AddPlacePage() {
 
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        if (!isWithinNewZealandBounds(coords.latitude, coords.longitude)) {
+          setGeoLoading(false);
+          setGeoError("Current location is outside New Zealand.");
+          return;
+        }
+
         setForm((current) => ({
           ...current,
           lat: coords.latitude.toFixed(6),
@@ -163,6 +115,53 @@ export default function AddPlacePage() {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const handleAddressLookup = async () => {
+    const query = [form.address.trim(), form.suburb.trim(), form.city.trim(), form.postcode.trim()]
+      .filter(Boolean)
+      .join(", ");
+    if (!query) {
+      setLookupError("Enter a New Zealand address before lookup.");
+      return;
+    }
+
+    setLookupLoading(true);
+    setLookupError(null);
+    setGeoError(null);
+
+    try {
+      const response = await fetch(`/api/geocode?address=${encodeURIComponent(query)}`);
+      const data = (await response.json()) as GeocodeResult | { error?: string };
+
+      if (!response.ok) {
+        throw new Error("error" in data ? data.error : "Unable to find a New Zealand address.");
+      }
+
+      const result = data as GeocodeResult;
+      setForm((current) => ({
+        ...current,
+        address: result.address || current.address,
+        suburb: result.suburb || current.suburb,
+        city: result.city || current.city,
+        postcode: result.postcode || current.postcode,
+        lat: formatCoordinate(String(result.lat)) || current.lat,
+        lng: formatCoordinate(String(result.lng)) || current.lng,
+      }));
+      setErrors((current) => ({
+        ...current,
+        address: undefined,
+        city: undefined,
+        lat: undefined,
+        lng: undefined,
+      }));
+    } catch (error) {
+      setLookupError(
+        error instanceof Error ? error.message : "Unable to find a New Zealand address."
+      );
+    } finally {
+      setLookupLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,7 +184,7 @@ export default function AddPlacePage() {
         name: form.name.trim(),
         address: form.address.trim(),
         city: form.city.trim(),
-        country: form.country.trim(),
+        country: NZ_COUNTRY_NAME,
         lat: Number(form.lat),
         lng: Number(form.lng),
         category: form.category,
@@ -207,27 +206,6 @@ export default function AddPlacePage() {
     } finally {
       setPending(false);
     }
-  };
-
-  const handleAddressSuggestionSelect = (suggestion: AddressSuggestion) => {
-    setForm((current) => ({
-      ...current,
-      address: getSuggestionAddress(suggestion) || current.address,
-      city: getSuggestionCity(suggestion) || current.city,
-      country: suggestion.address?.country || current.country,
-      lat: formatCoordinate(suggestion.lat) || current.lat,
-      lng: formatCoordinate(suggestion.lon) || current.lng,
-    }));
-    setErrors((current) => ({
-      ...current,
-      address: undefined,
-      city: undefined,
-      lat: undefined,
-      lng: undefined,
-    }));
-    setGeoError(null);
-    setAddressSearchError(null);
-    setShowAddressSuggestions(false);
   };
 
   if (submitted) {
@@ -260,7 +238,7 @@ export default function AddPlacePage() {
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Add a New Place</h1>
         <p className="text-sm text-stone-500 mt-1">
-          Help the community discover coeliac-safe venues.
+          Help the community discover coeliac-safe venues in New Zealand.
         </p>
       </div>
 
@@ -314,80 +292,70 @@ export default function AddPlacePage() {
               </select>
             </FormField>
             <FormField label="Phone">
-              <input type="tel" placeholder="+61 3 9000 0000" {...field("phone")} className={inputCls()} />
+              <input type="tel" placeholder="+64 9 123 4567" {...field("phone")} className={inputCls()} />
             </FormField>
           </div>
 
           <FormField label="Address *" error={errors.address}>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="123 Main Street"
-                value={form.address}
-                onFocus={() => setShowAddressSuggestions(true)}
-                onBlur={() => window.setTimeout(() => setShowAddressSuggestions(false), 150)}
-                onChange={(e) => {
-                  const address = e.target.value;
-                  setForm((current) => ({ ...current, address }));
-                  setErrors((current) => ({ ...current, address: undefined }));
-                  if (address.trim().length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
-                    setAddressSuggestions([]);
-                    setAddressSearchLoading(false);
-                    setAddressSearchError(null);
-                  } else {
-                    setAddressSearchError(null);
-                  }
-                  setShowAddressSuggestions(true);
-                }}
-                autoComplete="street-address"
-                className={inputCls(!!errors.address)}
-              />
-              {OSM_ADDRESS_SEARCH_URL && showAddressSuggestions && form.address.trim().length >= AUTOCOMPLETE_MIN_QUERY_LENGTH && (
-                <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
-                  {addressSearchLoading ? (
-                    <div className="px-4 py-3 text-sm text-stone-500">Searching addresses…</div>
-                  ) : addressSearchError ? (
-                    <div className="px-4 py-3 text-sm text-red-600">{addressSearchError}</div>
-                  ) : addressSuggestions.length > 0 ? (
-                    <ul className="max-h-72 overflow-y-auto py-1">
-                      {addressSuggestions.map((suggestion) => (
-                        <li key={`${suggestion.lat}:${suggestion.lon}:${suggestion.display_name}`}>
-                          <button
-                            type="button"
-                            onMouseDown={() => handleAddressSuggestionSelect(suggestion)}
-                            className="w-full px-4 py-3 text-left text-sm hover:bg-stone-50"
-                          >
-                            <div className="font-medium text-stone-800">
-                              {getSuggestionAddress(suggestion) || suggestion.display_name}
-                            </div>
-                            <div className="mt-1 text-xs text-stone-500">{suggestion.display_name}</div>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-stone-500">No matching addresses found.</div>
-                  )}
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              placeholder="123 Example Street (New Zealand)"
+              value={form.address}
+              onChange={(e) => {
+                const address = e.target.value;
+                setForm((current) => ({ ...current, address }));
+                setErrors((current) => ({ ...current, address: undefined }));
+                setLookupError(null);
+              }}
+              autoComplete="street-address"
+              className={inputCls(!!errors.address)}
+            />
           </FormField>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <FormField label="City *" error={errors.city}>
-              <input type="text" placeholder="Melbourne" {...field("city")} className={inputCls(!!errors.city)} />
+          <div className="grid sm:grid-cols-3 gap-4">
+            <FormField label="Suburb">
+              <input
+                type="text"
+                placeholder="Mount Eden"
+                value={form.suburb}
+                onChange={(e) => setForm((current) => ({ ...current, suburb: e.target.value }))}
+                className={inputCls()}
+              />
             </FormField>
-            <FormField label="Country">
-              <input type="text" {...field("country")} className={inputCls()} />
+            <FormField label="City *" error={errors.city}>
+              <input type="text" placeholder="Auckland" {...field("city")} className={inputCls(!!errors.city)} />
+            </FormField>
+            <FormField label="Postcode">
+              <input
+                type="text"
+                placeholder="1024"
+                value={form.postcode}
+                onChange={(e) => setForm((current) => ({ ...current, postcode: e.target.value }))}
+                className={inputCls()}
+              />
             </FormField>
           </div>
+          <p className="text-xs text-stone-500">Country: {NZ_COUNTRY_NAME} (fixed)</p>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <button
+              type="button"
+              onClick={handleAddressLookup}
+              disabled={lookupLoading}
+              className="border border-stone-300 rounded-xl px-4 py-2 hover:border-green-400 hover:text-green-700 transition-colors"
+            >
+              {lookupLoading ? "Looking up…" : "Look up NZ address"}
+            </button>
+            <span className="text-stone-500">Uses New Zealand-only address lookup.</span>
+          </div>
+          {lookupError && <p className="text-sm text-red-600">{lookupError}</p>}
 
           <div className="grid sm:grid-cols-2 gap-4">
             <FormField label="Latitude *" error={errors.lat}>
-              <input type="text" placeholder="-37.8136" {...field("lat")} className={inputCls(!!errors.lat)} />
+              <input type="text" placeholder="-36.8485" {...field("lat")} className={inputCls(!!errors.lat)} />
             </FormField>
             <FormField label="Longitude *" error={errors.lng}>
-              <input type="text" placeholder="144.9631" {...field("lng")} className={inputCls(!!errors.lng)} />
+              <input type="text" placeholder="174.7633" {...field("lng")} className={inputCls(!!errors.lng)} />
             </FormField>
           </div>
 
@@ -478,28 +446,8 @@ function formatCoordinate(value: string) {
   return Number.isFinite(parsed) ? parsed.toFixed(6) : "";
 }
 
-function getSuggestionAddress(suggestion: AddressSuggestion) {
-  const streetName =
-    suggestion.address?.road ||
-    suggestion.address?.pedestrian ||
-    suggestion.address?.footway ||
-    suggestion.address?.path ||
-    suggestion.address?.suburb;
-  const streetNumber = suggestion.address?.house_number;
-  const address = [streetNumber, streetName].filter(Boolean).join(" ").trim();
-
-  return address || suggestion.display_name.split(",")[0]?.trim() || "";
-}
-
-function getSuggestionCity(suggestion: AddressSuggestion) {
-  return (
-    suggestion.address?.city ||
-    suggestion.address?.town ||
-    suggestion.address?.village ||
-    suggestion.address?.municipality ||
-    suggestion.address?.county ||
-    ""
-  );
+function isWithinNewZealandBounds(lat: number, lng: number) {
+  return lat >= NZ_MIN_LAT && lat <= NZ_MAX_LAT && lng >= NZ_MIN_LNG && lng <= NZ_MAX_LNG;
 }
 
 function inputCls(hasError = false) {
