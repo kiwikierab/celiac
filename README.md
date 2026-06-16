@@ -1,6 +1,6 @@
 # 🌾 CeliacSafe
 
-A community web app for finding and reviewing **coeliac-safe** cafes, restaurants, and bakeries.
+A New Zealand-focused community web app for finding and reviewing **coeliac-safe** cafes, restaurants, and bakeries.
 
 Built with Next.js, Tailwind CSS, Leaflet/OpenStreetMap, and designed to connect to Supabase for auth, database, and storage.
 
@@ -12,6 +12,7 @@ Built with Next.js, Tailwind CSS, Leaflet/OpenStreetMap, and designed to connect
 - 📋 **List View** — filter and search places by celiac safety attributes
 - 🔍 **Place Detail** — see safety info, reviews, menu items, and photos
 - ➕ **Add a Place** — contribute new venues to the community
+- 🇳🇿 **NZ-only address lookup** — server-side Nominatim geocoding restricted to New Zealand
 - ⭐ **Reviews** — safety rating, taste rating, staff knowledge, cross-contact notes
 - 🔒 **Supabase auth** — sign in, sign up, and protected contribution flows
 - 📷 **Photo uploads** — upload venue photos to Supabase Storage
@@ -52,6 +53,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Without Supabase credentials the app stays in demo mode with mock data. Once configured, it uses real auth, database, and storage features.
 
+Address lookup in the add-place flow is New Zealand only.
+
 ---
 
 ## 🔧 Environment Variables
@@ -71,7 +74,9 @@ The app runs fine with an empty `.env.local` (mock data mode). Add Supabase cred
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional | Server-side admin tasks only |
 | `NEXT_PUBLIC_SUPABASE_PHOTOS_BUCKET` | Optional | Storage bucket for place photos (defaults to `place-photos`) |
 | `NEXT_PUBLIC_APP_URL` | Optional | App base URL (defaults to `http://localhost:3000`) |
-| `NEXT_PUBLIC_OSM_ADDRESS_SEARCH_URL` | Optional | Nominatim-compatible `/search` endpoint used for add-place address autocomplete |
+| `NOMINATIM_BASE_URL` | Optional | Base URL for server-side geocoding (defaults to `https://nominatim.openstreetmap.org`) |
+| `NOMINATIM_USER_AGENT` | Optional | User-Agent header sent to Nominatim |
+| `NOMINATIM_EMAIL` | Optional | Contact email appended to Nominatim requests |
 
 ---
 
