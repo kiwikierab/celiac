@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addPlace, syncProfileFromAuthUser } from "@/lib/data";
@@ -34,6 +34,29 @@ const defaultForm = {
   cross_contact_notes: "",
 };
 
+const OSM_ADDRESS_SEARCH_URL = process.env.NEXT_PUBLIC_OSM_ADDRESS_SEARCH_URL?.trim();
+const AUTOCOMPLETE_MIN_QUERY_LENGTH = 3;
+
+interface AddressSuggestion {
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    pedestrian?: string;
+    footway?: string;
+    path?: string;
+    suburb?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    country?: string;
+  };
+}
+
 export default function AddPlacePage() {
   const router = useRouter();
   const { session, loading: authLoading, isConfigured } = useAuthSession();
@@ -44,6 +67,65 @@ export default function AddPlacePage() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [addressSearchLoading, setAddressSearchLoading] = useState(false);
+  const [addressSearchError, setAddressSearchError] = useState<string | null>(null);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+
+  useEffect(() => {
+    const address = form.address.trim();
+    if (!OSM_ADDRESS_SEARCH_URL || address.length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setAddressSearchLoading(true);
+      setAddressSearchError(null);
+
+      try {
+        const url = new URL(OSM_ADDRESS_SEARCH_URL, window.location.origin);
+        const query = [address, form.city.trim(), form.country.trim()]
+          .filter(Boolean)
+          .join(", ");
+
+        url.searchParams.set("q", query);
+        url.searchParams.set("format", "jsonv2");
+        url.searchParams.set("addressdetails", "1");
+        url.searchParams.set("limit", "5");
+
+        const response = await fetch(url.toString(), {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load address suggestions.");
+        }
+
+        const data = (await response.json()) as AddressSuggestion[];
+        setAddressSuggestions(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setAddressSuggestions([]);
+        setAddressSearchError(
+          error instanceof Error ? error.message : "Unable to load address suggestions."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setAddressSearchLoading(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [form.address, form.city, form.country]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -125,6 +207,27 @@ export default function AddPlacePage() {
     } finally {
       setPending(false);
     }
+  };
+
+  const handleAddressSuggestionSelect = (suggestion: AddressSuggestion) => {
+    setForm((current) => ({
+      ...current,
+      address: getSuggestionAddress(suggestion) || current.address,
+      city: getSuggestionCity(suggestion) || current.city,
+      country: suggestion.address?.country || current.country,
+      lat: formatCoordinate(suggestion.lat) || current.lat,
+      lng: formatCoordinate(suggestion.lon) || current.lng,
+    }));
+    setErrors((current) => ({
+      ...current,
+      address: undefined,
+      city: undefined,
+      lat: undefined,
+      lng: undefined,
+    }));
+    setGeoError(null);
+    setAddressSearchError(null);
+    setShowAddressSuggestions(false);
   };
 
   if (submitted) {
@@ -216,7 +319,58 @@ export default function AddPlacePage() {
           </div>
 
           <FormField label="Address *" error={errors.address}>
-            <input type="text" placeholder="123 Main Street" {...field("address")} className={inputCls(!!errors.address)} />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="123 Main Street"
+                value={form.address}
+                onFocus={() => setShowAddressSuggestions(true)}
+                onBlur={() => window.setTimeout(() => setShowAddressSuggestions(false), 150)}
+                onChange={(e) => {
+                  const address = e.target.value;
+                  setForm((current) => ({ ...current, address }));
+                  setErrors((current) => ({ ...current, address: undefined }));
+                  if (address.trim().length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
+                    setAddressSuggestions([]);
+                    setAddressSearchLoading(false);
+                    setAddressSearchError(null);
+                  } else {
+                    setAddressSearchError(null);
+                  }
+                  setShowAddressSuggestions(true);
+                }}
+                autoComplete="street-address"
+                className={inputCls(!!errors.address)}
+              />
+              {OSM_ADDRESS_SEARCH_URL && showAddressSuggestions && form.address.trim().length >= AUTOCOMPLETE_MIN_QUERY_LENGTH && (
+                <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
+                  {addressSearchLoading ? (
+                    <div className="px-4 py-3 text-sm text-stone-500">Searching addresses…</div>
+                  ) : addressSearchError ? (
+                    <div className="px-4 py-3 text-sm text-red-600">{addressSearchError}</div>
+                  ) : addressSuggestions.length > 0 ? (
+                    <ul className="max-h-72 overflow-y-auto py-1">
+                      {addressSuggestions.map((suggestion) => (
+                        <li key={`${suggestion.lat}:${suggestion.lon}:${suggestion.display_name}`}>
+                          <button
+                            type="button"
+                            onMouseDown={() => handleAddressSuggestionSelect(suggestion)}
+                            className="w-full px-4 py-3 text-left text-sm hover:bg-stone-50"
+                          >
+                            <div className="font-medium text-stone-800">
+                              {getSuggestionAddress(suggestion) || suggestion.display_name}
+                            </div>
+                            <div className="mt-1 text-xs text-stone-500">{suggestion.display_name}</div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-stone-500">No matching addresses found.</div>
+                  )}
+                </div>
+              )}
+            </div>
           </FormField>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -316,6 +470,35 @@ export default function AddPlacePage() {
         </button>
       </form>
     </div>
+  );
+}
+
+function formatCoordinate(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(6) : "";
+}
+
+function getSuggestionAddress(suggestion: AddressSuggestion) {
+  const streetName =
+    suggestion.address?.road ||
+    suggestion.address?.pedestrian ||
+    suggestion.address?.footway ||
+    suggestion.address?.path ||
+    suggestion.address?.suburb;
+  const streetNumber = suggestion.address?.house_number;
+  const address = [streetNumber, streetName].filter(Boolean).join(" ").trim();
+
+  return address || suggestion.display_name.split(",")[0]?.trim() || "";
+}
+
+function getSuggestionCity(suggestion: AddressSuggestion) {
+  return (
+    suggestion.address?.city ||
+    suggestion.address?.town ||
+    suggestion.address?.village ||
+    suggestion.address?.municipality ||
+    suggestion.address?.county ||
+    ""
   );
 }
 
