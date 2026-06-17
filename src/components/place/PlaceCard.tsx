@@ -18,38 +18,38 @@ export default function PlaceCard({ place }: PlaceCardProps) {
 
   return (
     <Link href={`/places/${place.id}`} className="block group">
-      <div className="bg-white rounded-xl shadow-sm border border-stone-200 hover:shadow-md hover:border-green-300 transition-all p-4 h-full flex flex-col gap-3">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
+      <div className="surface-card flex h-full flex-col gap-4 p-5 transition-transform duration-150 group-hover:-translate-y-1">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-semibold text-stone-900 group-hover:text-green-700 transition-colors leading-tight">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+              {categoryLabels[place.category] ?? place.category}
+            </p>
+            <h3 className="mt-1 text-lg font-semibold leading-tight text-stone-900 transition-colors group-hover:text-[color:var(--brand)]">
               {place.name}
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">
-              {categoryLabels[place.category] ?? place.category} · {place.city}
+            <p className="mt-1 text-sm text-[color:var(--muted)]">
+              {place.city}, {place.country}
             </p>
           </div>
           {safetyRating > 0 && (
             <span
-              className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${safetyBgColor(safetyRating)}`}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${safetyBgColor(safetyRating)}`}
             >
               Safety {safetyRating.toFixed(1)}
             </span>
           )}
         </div>
 
-        {/* Description */}
         {place.description && (
-          <p className="text-sm text-stone-600 line-clamp-2">{place.description}</p>
+          <p className="line-clamp-3 text-sm leading-6 text-stone-600">{place.description}</p>
         )}
 
-        {/* Safety tags */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5"
+                className="rounded-full border border-[color:var(--stroke)] bg-[color:var(--panel-sage)] px-3 py-1 text-xs font-medium text-[color:var(--brand)]"
               >
                 {tag}
               </span>
@@ -57,8 +57,7 @@ export default function PlaceCard({ place }: PlaceCardProps) {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="mt-auto flex items-center justify-between text-xs text-stone-500">
+        <div className="mt-auto flex items-center justify-between text-xs text-[color:var(--muted)]">
           <span>
             {place.avg_overall_rating
               ? starsString(place.avg_overall_rating) + " " + place.avg_overall_rating.toFixed(1)
@@ -69,7 +68,9 @@ export default function PlaceCard({ place }: PlaceCardProps) {
           )}
         </div>
         {place.distance_km != null && (
-          <p className="text-xs text-green-700 font-medium">{formatDistanceKm(place.distance_km)}</p>
+          <p className="text-sm font-medium text-[color:var(--brand)]">
+            {formatDistanceKm(place.distance_km)}
+          </p>
         )}
       </div>
     </Link>

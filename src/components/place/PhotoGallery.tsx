@@ -84,9 +84,9 @@ export default function PhotoGallery({
   return (
     <section>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-lg font-semibold text-stone-800">Photos</h2>
+        <h2 className="text-lg font-semibold text-stone-900">Photos</h2>
         {isConfigured && user && (
-          <label className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:border-green-400 hover:text-green-700 cursor-pointer transition-colors">
+          <label className="btn-secondary cursor-pointer text-sm">
             <span>{pending ? "Uploading…" : "+ Add photo"}</span>
             <input
               type="file"
@@ -106,7 +106,7 @@ export default function PhotoGallery({
             value={alt}
             onChange={(event) => setAlt(event.target.value)}
             placeholder="Optional photo description"
-            className="w-full sm:max-w-sm rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="form-input w-full sm:max-w-sm"
           />
         </div>
       )}
@@ -116,14 +116,14 @@ export default function PhotoGallery({
       {photos.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {photos.map((photo) => (
-            <div key={photo.id} className="space-y-2">
+            <div key={photo.id} className="surface-soft space-y-2 p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photo.url}
                 alt={photo.alt ?? placeName}
-                className="rounded-xl object-cover aspect-video w-full"
+                className="aspect-video w-full rounded-[20px] object-cover"
               />
-              <div className="flex items-center justify-between gap-2 text-xs text-stone-500">
+              <div className="flex items-center justify-between gap-2 px-1 pb-1 text-xs text-[color:var(--muted)]">
                 <span>{photo.user_name ?? "Community member"}</span>
                 <ReportButton entityId={photo.id} entityType="photo" compact />
               </div>
@@ -131,7 +131,7 @@ export default function PhotoGallery({
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-stone-300 bg-white px-4 py-8 text-center text-sm text-stone-500">
+        <div className="surface-soft border-dashed px-4 py-8 text-center text-sm text-[color:var(--muted)]">
           No photos yet.
         </div>
       )}

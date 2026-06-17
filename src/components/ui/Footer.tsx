@@ -1,10 +1,10 @@
 export default function Footer() {
   return (
-    <footer className="border-t border-stone-200 bg-white mt-16">
-      <div className="max-w-6xl mx-auto px-4 py-8 text-center text-sm text-stone-500">
+    <footer className="mt-16 px-4 pb-6">
+      <div className="surface-card mx-auto max-w-6xl px-6 py-8 text-center text-sm text-[color:var(--muted)]">
         <p>
-          🌾 <strong className="text-green-700">CeliacSafe</strong> — a community app for
-          finding coeliac-friendly venues.
+          🌾 <strong className="text-[color:var(--brand)]">CeliacSafe</strong> helps New
+          Zealanders discover coeliac-friendly venues with confidence.
         </p>
         <p className="mt-1 text-xs">
           Always verify safety information directly with the venue before eating.

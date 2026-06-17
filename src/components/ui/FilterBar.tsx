@@ -28,11 +28,12 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}
+            type="button"
             onClick={() => onChange({ ...filters, category: cat.value })}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            className={`chip ${
               filters.category === cat.value
-                ? "bg-green-600 text-white border-green-600"
-                : "bg-white text-stone-600 border-stone-300 hover:border-green-400"
+                ? "chip-active"
+                : ""
             }`}
           >
             {cat.label}
@@ -78,13 +79,10 @@ function ToggleChip({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-        active
-          ? "bg-green-600 text-white border-green-600"
-          : "bg-white text-stone-600 border-stone-300 hover:border-green-400"
-      }`}
+      className={`chip ${active ? "chip-active" : ""}`}
     >
       {active && "✓ "}
       {label}

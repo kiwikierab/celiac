@@ -20,10 +20,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const displayName = profile?.display_name || profile?.username || `Community member ${id.slice(0, 8)}`;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-      <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-3">
-        <p className="text-sm text-green-700 font-semibold">Community profile</p>
-        <h1 className="text-3xl font-bold text-stone-900">{displayName}</h1>
+    <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+      <section className="surface-card space-y-3 p-6">
+        <p className="text-sm font-semibold text-[color:var(--brand)]">Community profile</p>
+        <h1 className="display-title text-stone-900">{displayName}</h1>
         {profile?.bio && <p className="text-stone-600">{profile.bio}</p>}
         <div className="flex flex-wrap gap-3 text-sm text-stone-600">
           <span>{places.length} places</span>
@@ -54,11 +54,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 <Link
                   key={review.id}
                   href={`/places/${review.place_id}`}
-                  className="block rounded-xl border border-stone-200 bg-white p-4 hover:border-green-300 transition-colors"
+                  className="surface-soft block p-4 transition-transform duration-150 hover:-translate-y-1"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium text-stone-800">{review.overall_rating}/5 overall</p>
-                    <span className="text-xs text-stone-400">{formatDate(review.created_at)}</span>
+                    <span className="text-xs text-[color:var(--muted)]">{formatDate(review.created_at)}</span>
                   </div>
                   {review.notes && <p className="mt-2 text-sm text-stone-600">{review.notes}</p>}
                 </Link>
@@ -79,7 +79,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
                   <img
                     src={photo.url}
                     alt={photo.alt ?? "Contribution photo"}
-                    className="rounded-xl aspect-video object-cover w-full border border-stone-200"
+                    className="surface-soft aspect-video w-full object-cover p-1"
                   />
                 </Link>
               ))}

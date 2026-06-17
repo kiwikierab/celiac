@@ -21,13 +21,13 @@ export default function AuthNav() {
       <>
         <Link
           href="/signup"
-          className="hidden sm:inline-flex text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+          className="btn-muted hidden text-sm sm:inline-flex"
         >
           Demo Mode
         </Link>
         <Link
           href="/login"
-          className="text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+          className="btn-muted text-sm"
         >
           Sign In
         </Link>
@@ -36,7 +36,7 @@ export default function AuthNav() {
   }
 
   if (loading) {
-    return <span className="text-xs text-stone-400 px-3">Loading…</span>;
+    return <span className="px-3 text-xs text-[color:var(--muted)]">Loading…</span>;
   }
 
   if (!user) {
@@ -44,13 +44,13 @@ export default function AuthNav() {
       <>
         <Link
           href="/signup"
-          className="hidden sm:inline-flex text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+          className="btn-muted hidden text-sm sm:inline-flex"
         >
           Sign Up
         </Link>
         <Link
           href="/login"
-          className="text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+          className="btn-muted text-sm"
         >
           Sign In
         </Link>
@@ -62,14 +62,14 @@ export default function AuthNav() {
     <>
       <Link
         href="/profile"
-        className="text-sm text-stone-600 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+        className="btn-muted text-sm"
       >
         Profile
       </Link>
       <button
         type="button"
         onClick={handleSignOut}
-        className="text-sm text-stone-500 hover:text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+        className="btn-muted text-sm"
       >
         Sign Out
       </button>
