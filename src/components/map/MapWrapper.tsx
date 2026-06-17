@@ -7,7 +7,7 @@ import type { Place } from "@/types";
 const PlacesMap = dynamic(() => import("@/components/map/PlacesMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-stone-200 animate-pulse rounded-xl flex items-center justify-center text-stone-500 text-sm">
+    <div className="surface-soft flex h-full w-full items-center justify-center text-sm text-[color:var(--muted)]">
       Loading map…
     </div>
   ),

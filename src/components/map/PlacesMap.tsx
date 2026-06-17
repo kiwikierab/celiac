@@ -17,7 +17,7 @@ interface MapProps {
 
 export default function PlacesMap({
   places,
-  center = [-37.82, 144.98],
+  center = [-41.2865, 174.7762],
   zoom = 12,
   selectedId,
   userLocation,
@@ -84,13 +84,13 @@ export default function PlacesMap({
 
       const popupContent = `
         <div style="min-width:180px">
-          <strong style="font-size:14px">${place.name}</strong>
-          <div style="font-size:12px;color:#666;margin:2px 0">${place.city}</div>
+          <strong style="font-size:14px;color:#17352a">${place.name}</strong>
+          <div style="font-size:12px;color:#6d6559;margin:4px 0">${place.city}, ${place.country}</div>
           ${safetyClass} Safety: ${safetyRating > 0 ? safetyRating.toFixed(1) + "/5" : "No data"}
           <br/>
           ${tags.length > 0 ? tags.join(" · ") : ""}
           <br/>
-          <a href="/places/${place.id}" style="color:#15803d;font-size:12px;font-weight:600">
+          <a href="/places/${place.id}" style="color:#214d3c;font-size:12px;font-weight:600">
             View details →
           </a>
         </div>
@@ -114,8 +114,8 @@ export default function PlacesMap({
         leaflet.marker(userLocation).bindPopup("You are here"),
         leaflet.circle(userLocation, {
           radius: 250,
-          color: "#15803d",
-          fillColor: "#86efac",
+          color: "#214d3c",
+          fillColor: "#df7658",
           fillOpacity: 0.2,
         }),
       ]).addTo(map);

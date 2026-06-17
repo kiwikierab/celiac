@@ -14,22 +14,21 @@ export default function SafetyBadge({ place, size = "md" }: SafetyBadgeProps) {
 
   if (size === "sm") {
     return (
-      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${colorClass}`}>
+      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${colorClass}`}>
         {summary}
       </span>
     );
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+    <div className="surface-card space-y-4 p-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-stone-800">Celiac Safety</h3>
-        <span className={`text-sm font-semibold px-3 py-1 rounded-full ${colorClass}`}>
+        <h3 className="text-lg font-semibold text-stone-900">Celiac Safety</h3>
+        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${colorClass}`}>
           {summary}
         </span>
       </div>
 
-      {/* Feature checklist */}
       <ul className="space-y-1.5 text-sm">
         <SafetyItem label="Gluten-Free Menu" active={place.gluten_free_menu} />
         <SafetyItem label="Dedicated Fryer" active={place.dedicated_fryer} />
@@ -37,21 +36,19 @@ export default function SafetyBadge({ place, size = "md" }: SafetyBadgeProps) {
         <SafetyItem label="Staff Trained on Coeliac" active={place.staff_trained} />
       </ul>
 
-      {/* Cross contact notes */}
       {place.cross_contact_notes && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+        <div className="rounded-[20px] border border-[#ecc8a0] bg-[#fff4e5] p-3 text-xs text-[#8f5722]">
           <span className="font-semibold">Cross-contact note: </span>
           {place.cross_contact_notes}
         </div>
       )}
 
-      {/* Tags */}
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5"
+              className="rounded-full border border-[color:var(--stroke)] bg-[color:var(--panel-sage)] px-3 py-1 text-xs font-medium text-[color:var(--brand)]"
             >
               {tag}
             </span>
@@ -64,7 +61,7 @@ export default function SafetyBadge({ place, size = "md" }: SafetyBadgeProps) {
 
 function SafetyItem({ label, active }: { label: string; active: boolean }) {
   return (
-    <li className={`flex items-center gap-2 ${active ? "text-green-700" : "text-stone-400"}`}>
+    <li className={`flex items-center gap-2 ${active ? "text-[color:var(--brand)]" : "text-stone-400"}`}>
       <span className="text-base">{active ? "✓" : "✗"}</span>
       <span>{label}</span>
     </li>

@@ -210,10 +210,12 @@ export default function AddPlacePage() {
 
   if (submitted) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <div className="surface-card space-y-4 px-6 py-10">
         <div className="text-5xl">🎉</div>
         <h2 className="text-xl font-bold text-stone-800">Place submitted!</h2>
         <p className="text-stone-500">Thank you for contributing to the community.</p>
+        </div>
       </div>
     );
   }
@@ -228,45 +230,47 @@ export default function AddPlacePage() {
   const isAuthenticated = Boolean(session?.user);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <nav className="text-sm text-stone-500 flex gap-1">
-        <Link href="/places" className="hover:text-green-700">Places</Link>
+    <div className="px-4 py-8">
+      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <nav className="flex gap-1 text-sm text-[color:var(--muted)]">
+        <Link href="/places" className="hover:text-[color:var(--brand)]">Places</Link>
         <span>/</span>
         <span className="text-stone-700">Add a Place</span>
       </nav>
 
-      <div>
-        <h1 className="text-2xl font-bold text-stone-900">Add a New Place</h1>
-        <p className="text-sm text-stone-500 mt-1">
+      <section className="surface-card px-6 py-7 sm:px-8">
+        <span className="eyebrow">Share a local find</span>
+        <h1 className="display-title mt-4 text-stone-900">Add a new place</h1>
+        <p className="mt-3 text-base leading-7 text-[color:var(--muted)]">
           Help the community discover coeliac-safe venues in New Zealand.
         </p>
-      </div>
+      </section>
 
       {requiresAuth ? (
         authLoading ? (
-          <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+          <div className="status-note">
             Checking your session…
           </div>
         ) : isAuthenticated ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
+          <div className="status-success">
             Signed in as <strong>{session?.user.email}</strong>. Your contribution will appear on your profile.
           </div>
         ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+          <div className="status-warning">
             <strong>Sign in required.</strong> Please{" "}
             <Link href="/login?next=/add-place" className="underline">sign in</Link> to add a place.
           </div>
         )
       ) : (
-        <div className="bg-stone-100 border border-stone-200 rounded-xl p-4 text-sm text-stone-600">
+        <div className="status-note">
           Demo mode: place submissions are not persisted until Supabase is configured.
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="surface-card space-y-8 px-6 py-7 sm:px-8">
         {/* Basic info */}
         <fieldset className="space-y-4">
-          <legend className="text-base font-semibold text-stone-800 border-b border-stone-200 pb-2 w-full">
+          <legend className="w-full border-b border-[color:var(--stroke)] pb-2 text-base font-semibold text-stone-800">
             Basic Information
           </legend>
 
@@ -335,18 +339,18 @@ export default function AddPlacePage() {
               />
             </FormField>
           </div>
-          <p className="text-xs text-stone-500">Country: {NZ_COUNTRY_NAME} (fixed)</p>
+          <p className="text-xs text-[color:var(--muted)]">Country: {NZ_COUNTRY_NAME} (fixed)</p>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <button
               type="button"
               onClick={handleAddressLookup}
               disabled={lookupLoading}
-              className="border border-stone-300 rounded-xl px-4 py-2 hover:border-green-400 hover:text-green-700 transition-colors"
+              className="btn-secondary"
             >
               {lookupLoading ? "Looking up…" : "Look up NZ address"}
             </button>
-            <span className="text-stone-500">Uses New Zealand-only address lookup.</span>
+            <span className="text-[color:var(--muted)]">Uses New Zealand-only address lookup.</span>
           </div>
           {lookupError && <p className="text-sm text-red-600">{lookupError}</p>}
 
@@ -364,7 +368,7 @@ export default function AddPlacePage() {
               type="button"
               onClick={captureCurrentLocation}
               disabled={geoLoading}
-              className="border border-stone-300 rounded-xl px-4 py-2 hover:border-green-400 hover:text-green-700 transition-colors"
+              className="btn-secondary"
             >
               {geoLoading ? "Locating…" : "Use current location"}
             </button>
@@ -382,7 +386,7 @@ export default function AddPlacePage() {
 
         {/* Celiac safety */}
         <fieldset className="space-y-4">
-          <legend className="text-base font-semibold text-stone-800 border-b border-stone-200 pb-2 w-full">
+          <legend className="w-full border-b border-[color:var(--stroke)] pb-2 text-base font-semibold text-stone-800">
             🛡️ Celiac Safety
           </legend>
 
@@ -424,7 +428,7 @@ export default function AddPlacePage() {
         </fieldset>
 
         {submitError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="status-danger">
             {submitError}
           </div>
         )}
@@ -432,11 +436,12 @@ export default function AddPlacePage() {
         <button
           type="submit"
           disabled={pending || (requiresAuth && !isAuthenticated)}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="btn-primary w-full"
         >
           {pending ? "Submitting…" : "Submit Place"}
         </button>
       </form>
+      </div>
     </div>
   );
 }
@@ -451,9 +456,7 @@ function isWithinNewZealandBounds(lat: number, lng: number) {
 }
 
 function inputCls(hasError = false) {
-  return `w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${
-    hasError ? "border-red-400 bg-red-50" : "border-stone-300 bg-white"
-  }`;
+  return `form-input ${hasError ? "form-input-error" : ""}`;
 }
 
 function FormField({
@@ -486,13 +489,13 @@ function CheckboxField({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label htmlFor={id} className="flex items-center gap-3 cursor-pointer select-none bg-white border border-stone-200 rounded-xl p-3 hover:border-green-300 transition-colors">
+    <label htmlFor={id} className="surface-soft flex cursor-pointer items-center gap-3 p-3 select-none">
       <input
         id={id}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded accent-green-600"
+        className="h-4 w-4 rounded accent-[color:var(--brand)]"
       />
       <span className="text-sm text-stone-700">{label}</span>
     </label>

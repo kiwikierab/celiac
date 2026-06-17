@@ -58,15 +58,15 @@ export default function LoginPage() {
   if (user && !sessionLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm space-y-4 text-center">
+        <div className="surface-card w-full max-w-md space-y-4 px-6 py-8 text-center">
           <div className="text-4xl">✅</div>
-          <h1 className="text-2xl font-bold text-stone-900">You&apos;re already signed in</h1>
-          <p className="text-sm text-stone-500">Continue to your profile or head back home.</p>
+          <h1 className="display-title text-stone-900">You&apos;re already signed in</h1>
+          <p className="text-sm text-[color:var(--muted)]">Continue to your profile or head back home.</p>
           <div className="flex gap-3 justify-center">
-            <Link href="/profile" className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors">
+            <Link href="/profile" className="btn-primary">
               View Profile
             </Link>
-            <Link href="/" className="border border-stone-300 text-stone-700 font-semibold py-2.5 px-4 rounded-xl transition-colors hover:border-green-400 hover:text-green-700">
+            <Link href="/" className="btn-secondary">
               Home
             </Link>
           </div>
@@ -77,15 +77,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="surface-card w-full max-w-md space-y-6 px-6 py-8">
         <div className="text-center">
           <div className="text-4xl mb-2">🌾</div>
-          <h1 className="text-2xl font-bold text-stone-900">Welcome back</h1>
-          <p className="text-sm text-stone-500 mt-1">Sign in to your CeliacSafe account</p>
+          <h1 className="display-title text-stone-900">Welcome back</h1>
+          <p className="mt-1 text-sm text-[color:var(--muted)]">Sign in to your CeliacSafe account</p>
         </div>
 
         {submitted ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center text-green-800 text-sm">
+          <div className="status-success text-center">
             <strong>Demo mode only.</strong> Supabase integration is not yet configured.
             <br />
             <Link href="/" className="underline mt-2 inline-block">Back to home</Link>
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="you@example.com"
-                className="w-full border border-stone-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="form-input"
               />
             </div>
             <div>
@@ -117,12 +117,12 @@ export default function LoginPage() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="••••••••"
-                className="w-full border border-stone-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="form-input"
               />
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="status-danger">
                 {error}
               </div>
             )}
@@ -130,21 +130,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={pending || sessionLoading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
+              className="btn-primary w-full"
             >
               {pending ? "Signing in…" : "Sign In"}
             </button>
           </form>
         )}
 
-        <p className="text-center text-sm text-stone-500">
+        <p className="text-center text-sm text-[color:var(--muted)]">
           No account?{" "}
-          <Link href="/signup" className="text-green-700 font-medium hover:underline">
+          <Link href="/signup" className="font-medium text-[color:var(--brand)] hover:underline">
             Create one
           </Link>
         </p>
 
-        <div className="text-center text-xs text-stone-400 bg-stone-100 rounded-xl p-3">
+        <div className="surface-soft p-3 text-center text-xs text-[color:var(--muted)]">
           {isSupabaseConfigured() ? (
             <>🔒 Auth is backed by Supabase.</>
           ) : (

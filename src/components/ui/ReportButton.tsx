@@ -59,19 +59,19 @@ export default function ReportButton({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="text-stone-400 hover:text-red-600 transition-colors"
+        className="font-medium text-[color:var(--muted)] transition-colors hover:text-[#b44f3b]"
       >
         {submitted ? "Reported" : "Report"}
       </button>
 
       {open && (
-        <div className="mt-2 rounded-xl border border-stone-200 bg-stone-50 p-3 space-y-2">
+        <div className="surface-soft mt-2 space-y-2 p-3">
           <textarea
             rows={3}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="What should a moderator review?"
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="form-input"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex items-center gap-2">
@@ -79,14 +79,14 @@ export default function ReportButton({
               type="button"
               onClick={handleSubmit}
               disabled={pending}
-              className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white"
+              className="btn-primary text-xs"
             >
               {pending ? "Sending…" : "Submit report"}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-600"
+              className="btn-secondary text-xs"
             >
               Cancel
             </button>

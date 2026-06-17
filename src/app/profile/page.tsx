@@ -10,14 +10,16 @@ import type { Photo, Place, Review } from "@/types";
 export default async function ProfilePage() {
   if (!isSupabaseConfigured()) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
-        <h1 className="text-3xl font-bold text-stone-900">Profile</h1>
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <div className="surface-card space-y-4 px-6 py-8">
+        <h1 className="display-title text-stone-900">Profile</h1>
         <p className="text-stone-600">
           Supabase auth is not configured yet, so profile data is only available in demo mode.
         </p>
-        <Link href="/places" className="text-green-700 hover:underline">
+        <Link href="/places" className="font-medium text-[color:var(--brand)] hover:underline">
           Browse places →
         </Link>
+        </div>
       </div>
     );
   }
@@ -37,11 +39,11 @@ export default async function ProfilePage() {
     profile?.display_name || profile?.username || user.user_metadata.name || user.email;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-      <section className="bg-white border border-stone-200 rounded-2xl p-6 space-y-3">
-        <p className="text-sm text-green-700 font-semibold">Your profile</p>
-        <h1 className="text-3xl font-bold text-stone-900">{displayName}</h1>
-        <p className="text-sm text-stone-500">{user.email}</p>
+    <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+      <section className="surface-card space-y-3 p-6">
+        <p className="text-sm font-semibold text-[color:var(--brand)]">Your profile</p>
+        <h1 className="display-title text-stone-900">{displayName}</h1>
+        <p className="text-sm text-[color:var(--muted)]">{user.email}</p>
         {profile?.bio && <p className="text-stone-600">{profile.bio}</p>}
         <div className="flex flex-wrap gap-3 text-sm text-stone-600">
           <span>{places.length} places</span>
@@ -53,7 +55,7 @@ export default async function ProfilePage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-stone-900">Places you added</h2>
-          <Link href="/add-place" className="text-sm text-green-700 hover:underline">
+          <Link href="/add-place" className="btn-secondary text-sm">
             + Add another place
           </Link>
         </div>
@@ -77,11 +79,11 @@ export default async function ProfilePage() {
                 <Link
                   key={review.id}
                   href={`/places/${review.place_id}`}
-                  className="block rounded-xl border border-stone-200 bg-white p-4 hover:border-green-300 transition-colors"
+                  className="surface-soft block p-4 transition-transform duration-150 hover:-translate-y-1"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium text-stone-800">{review.overall_rating}/5 overall</p>
-                    <span className="text-xs text-stone-400">{formatDate(review.created_at)}</span>
+                    <span className="text-xs text-[color:var(--muted)]">{formatDate(review.created_at)}</span>
                   </div>
                   {review.notes && <p className="mt-2 text-sm text-stone-600">{review.notes}</p>}
                 </Link>
@@ -98,12 +100,14 @@ export default async function ProfilePage() {
             <div className="grid grid-cols-2 gap-3">
               {photos.map((photo: Photo) => (
                 <Link key={photo.id} href={`/places/${photo.place_id}`} className="block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.url}
-                    alt={photo.alt ?? "Contribution photo"}
-                    className="rounded-xl aspect-video object-cover w-full border border-stone-200"
-                  />
+                  <div className="surface-soft p-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.url}
+                      alt={photo.alt ?? "Contribution photo"}
+                      className="aspect-video w-full rounded-[20px] object-cover"
+                    />
+                  </div>
                 </Link>
               ))}
             </div>

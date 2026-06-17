@@ -58,17 +58,17 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="surface-card w-full max-w-md space-y-6 px-6 py-8">
         <div className="text-center">
           <div className="text-4xl mb-2">🌾</div>
-          <h1 className="text-2xl font-bold text-stone-900">Join CeliacSafe</h1>
-          <p className="text-sm text-stone-500 mt-1">
+          <h1 className="display-title text-stone-900">Join CeliacSafe</h1>
+          <p className="mt-1 text-sm text-[color:var(--muted)]">
             Create an account to add places and write reviews
           </p>
         </div>
 
         {submitted ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center text-green-800 text-sm">
+          <div className="status-success text-center">
             <strong>{message ?? "Demo mode only."}</strong> {!isSupabaseConfigured() && " Supabase integration is not yet configured."}
             <br />
             <Link href={isSupabaseConfigured() ? "/login" : "/"} className="underline mt-2 inline-block">
@@ -87,7 +87,7 @@ export default function SignUpPage() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Jane Smith"
-                className="w-full border border-stone-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="form-input"
               />
             </div>
             <div>
@@ -101,7 +101,7 @@ export default function SignUpPage() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="you@example.com"
-                className="w-full border border-stone-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="form-input"
               />
             </div>
             <div>
@@ -116,12 +116,12 @@ export default function SignUpPage() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="Min. 8 characters"
-                className="w-full border border-stone-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="form-input"
               />
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="status-danger">
                 {error}
               </div>
             )}
@@ -129,21 +129,21 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={pending}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors"
+              className="btn-primary w-full"
             >
               {pending ? "Creating account…" : "Create Account"}
             </button>
           </form>
         )}
 
-        <p className="text-center text-sm text-stone-500">
+        <p className="text-center text-sm text-[color:var(--muted)]">
           Already have an account?{" "}
-          <Link href="/login" className="text-green-700 font-medium hover:underline">
+          <Link href="/login" className="font-medium text-[color:var(--brand)] hover:underline">
             Sign in
           </Link>
         </p>
 
-        <div className="text-center text-xs text-stone-400 bg-stone-100 rounded-xl p-3">
+        <div className="surface-soft p-3 text-center text-xs text-[color:var(--muted)]">
           {isSupabaseConfigured() ? (
             <>🔒 New accounts are stored in Supabase Auth.</>
           ) : (
