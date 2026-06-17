@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Crumbly helps people discover and review gluten-free and coeliac-safe places."
+    />
+    <title>Crumbly - Eat out with confidence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Crumbly home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" role="img">
+            <path d="M10 20c0-7 4-12 10-15 6 3 10 8 10 15s-4 12-10 15c-6-3-10-8-10-15Z" />
+            <path d="M20 8v24M14 14l6 4 6-4M14 23l6 4 6-4" />
+          </svg>
+        </span>
+        <span>crumbly</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a class="active" href="#explore">Explore</a>
+        <button class="nav-button" type="button" data-open-contribute>Contribute</button>
+        <a href="#about">About</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" id="savedButton" aria-label="Show saved places">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 21 12 16l-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+          </svg>
+          <span class="saved-count" id="savedCount">0</span>
+        </button>
+        <button class="button button-outline" id="loginButton" type="button">Log in</button>
+        <button class="button button-dark" type="button" data-open-contribute>Add a place</button>
+      </div>
+    </header>
+
+    <main id="explore">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="pulse-dot"></span> Community verified</span>
+          <h1>
+            <span>Eat out with</span>
+            <em>confidence.</em>
+          </h1>
+          <p>
+            Discover places that take gluten-free seriously, reviewed by people who get it.
+          </p>
+
+          <form class="search-box" id="searchForm">
+            <label class="search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search cafés, bakeries, dishes..."
+                autocomplete="off"
+              />
+            </label>
+
+            <span class="search-divider"></span>
+
+            <label class="location-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+              <input id="locationInput" type="text" value="Auckland, NZ" aria-label="Location" />
+            </label>
+
+            <button class="search-submit" type="submit" aria-label="Search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </form>
+
+          <div class="quick-filters" aria-label="Quick filters">
+            <button class="filter-chip active" type="button" data-filter="all">All places</button>
+            <button class="filter-chip" type="button" data-filter="dedicated">100% gluten-free</button>
+            <button class="filter-chip" type="button" data-filter="bakery">Bakeries</button>
+            <button class="filter-chip" type="button" data-filter="dinner">Dinner</button>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="sun"></div>
+          <div class="grain grain-one"></div>
+          <div class="grain grain-two"></div>
+
+          <div class="hero-dish">
+            <div class="plate">
+              <span class="food food-one"></span>
+              <span class="food food-two"></span>
+              <span class="food food-three"></span>
+              <span class="food food-four"></span>
+              <span class="leaf leaf-one"></span>
+              <span class="leaf leaf-two"></span>
+            </div>
+          </div>
+
+          <div class="trust-card">
+            <span class="shield-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z" />
+                <path d="m9 12 2 2 4-5" />
+              </svg>
+            </span>
+            <div>
+              <strong>Coeliac safe</strong>
+              <small>Verified by 24 diners</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="browse-section">
+        <div class="browse-heading">
+          <div>
+            <span class="section-kicker">NEAR YOU</span>
+            <h2>Places worth getting excited about</h2>
+          </div>
+
+          <div class="browse-actions">
+            <div class="view-toggle" aria-label="Choose view">
+              <button class="active" type="button" data-view="list">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                </svg>
+                List
+              </button>
+              <button type="button" data-view="map">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
+                  <path d="M9 3v15M15 6v15" />
+                </svg>
+                Map
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-meta">
+          <p><strong id="resultCount">6 places</strong> within 10 km</p>
+          <button class="filter-control" id="filterButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            Filters <span id="filterBadge">2</span>
+          </button>
+        </div>
+
+        <div class="filter-panel" id="filterPanel" hidden>
+          <label><input type="checkbox" value="dedicated" checked /> Dedicated gluten-free kitchen</label>
+          <label><input type="checkbox" value="separate" checked /> Separate prep area</label>
+          <label><input type="checkbox" value="vegan" /> Vegan options</label>
+          <label><input type="checkbox" value="dairy-free" /> Dairy-free options</label>
+        </div>
+
+        <div class="explore-layout">
+          <div class="place-grid" id="placeGrid"></div>
+
+          <aside class="map-panel" id="mapPanel">
+            <div id="map" aria-label="Map of gluten-free places around Auckland"></div>
+            <button class="map-locate" id="locateButton" type="button" aria-label="Use my location">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              </svg>
+            </button>
+            <div class="map-key"><span></span> Dedicated gluten-free</div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="community-section" id="about">
+        <div>
+          <span class="section-kicker">BUILT BY THE COMMUNITY</span>
+          <h2>Small details make a big difference.</h2>
+        </div>
+        <p>Every review helps someone choose their next meal with less stress and more joy.</p>
+        <div class="stat">
+          <strong>1,240+</strong>
+          <span>local reviews</span>
+        </div>
+        <button class="button button-coral" type="button" data-open-contribute>Share a safe spot</button>
+      </section>
+    </main>
+
+    <dialog class="modal place-modal" id="placeModal">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <div id="placeDetail"></div>
+    </dialog>
+
+    <dialog class="modal auth-modal" id="authModal">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <span class="brand-mark modal-brand" aria-hidden="true">
+        <svg viewBox="0 0 40 40">
+          <path d="M10 20c0-7 4-12 10-15 6 3 10 8 10 15s-4 12-10 15c-6-3-10-8-10-15Z" />
+          <path d="M20 8v24M14 14l6 4 6-4M14 23l6 4 6-4" />
+        </svg>
+      </span>
+      <h2>Welcome to Crumbly</h2>
+      <p>Join the community making eating out feel safer.</p>
+
+      <div class="auth-tabs" aria-label="Account action">
+        <button class="active" type="button" data-auth-view="register">Register</button>
+        <button type="button" data-auth-view="login">Log in</button>
+      </div>
+
+      <form id="registerForm">
+        <label>Name<input name="name" required placeholder="Your name" /></label>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
+        <label>Password<input name="password" type="password" minlength="8" required placeholder="At least 8 characters" /></label>
+        <button class="button button-dark full-width" type="submit">Create free account</button>
+      </form>
+
+      <form id="loginForm" hidden>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
+        <label>Password<input name="password" type="password" required placeholder="Your password" /></label>
+        <button class="button button-dark full-width" type="submit">Log in</button>
+      </form>
+
+      <small id="authModeNote">
+        Connect Supabase to enable secure accounts. Until then, this preview uses local demo accounts.
+      </small>
+    </dialog>
+
+    <dialog class="modal auth-modal" id="accountModal">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <span class="section-kicker">YOUR ACCOUNT</span>
+      <h2 id="accountName">Account</h2>
+      <p id="accountEmail"></p>
+      <a class="button button-dark full-width account-admin-link" id="adminLink" href="./admin.html" hidden>Open admin dashboard</a>
+      <button class="button button-outline full-width" id="logoutButton" type="button">Log out</button>
+    </dialog>
+
+    <dialog class="modal contribute-modal" id="contributeModal">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <span class="section-kicker">COMMUNITY CONTRIBUTION</span>
+      <h2>Add a safe place</h2>
+      <p>Know somewhere that handles gluten-free food with care? Put it on the map.</p>
+
+      <form id="contributeForm">
+        <div class="form-row">
+          <label>Place name<input name="name" required placeholder="e.g. Sunday Kitchen" /></label>
+          <label>Type
+            <select name="type">
+              <option>Café</option>
+              <option>Bakery</option>
+              <option>Restaurant</option>
+              <option>Takeaway</option>
+            </select>
+          </label>
+        </div>
+
+        <label>Address<input name="address" required placeholder="Street, suburb, city" /></label>
+        <label class="checkbox-label"><input name="dedicated" type="checkbox" /> This is a 100% gluten-free venue</label>
+        <label>What makes it feel safe?
+          <textarea name="notes" rows="3" required placeholder="Separate fryer, knowledgeable staff, labelled menu..."></textarea>
+        </label>
+        <button class="button button-coral full-width" type="submit">Add place</button>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
+    <script src="./backend.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
