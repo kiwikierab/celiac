@@ -75,12 +75,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
             <div className="grid grid-cols-2 gap-3">
               {photos.map((photo: Photo) => (
                 <Link key={photo.id} href={`/places/${photo.place_id}`} className="block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.url}
-                    alt={photo.alt ?? "Contribution photo"}
-                    className="surface-soft aspect-video w-full object-cover p-1"
-                  />
+                  <div className="surface-soft p-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.url}
+                      alt={photo.alt ?? "Contribution photo"}
+                      className="aspect-video w-full rounded-[20px] object-cover"
+                    />
+                  </div>
                 </Link>
               ))}
             </div>
